@@ -11,7 +11,10 @@ app.use(bodyParser.json())
 
 app.post('/whatsapp/connect', async (req, res) => {
 
-    browser = await puppeteer.launch({ headless: false });
+    browser = await puppeteer.launch({
+        headless: false,
+        defaultViewport: null, //Defaults to an 800x600 viewport
+    });
     page = await browser.newPage();
     await page.goto("https://web.whatsapp.com", { waitUntil: 'networkidle0' });
 
@@ -21,39 +24,38 @@ app.post('/whatsapp/connect', async (req, res) => {
 
 app.post('/whatsapp/send/contacts', async (req, res) => {
 
-    let message = req.body.message;
+    let message;
 
-    for (let i = 0; i < req.body.contacts.length; i++) {
+    for (let i = 0; i < req.body.messages.length; i++) {
 
-        let name = req.body.contacts[i].name;
+        message = req.body.messages[i].message;
 
-        await page.click('._3FRCZ');
-        await page.waitFor(1000);
-        await page.type('._3FRCZ', name);
-        await page.waitFor(1000);
-        await page.click('._3FRCZ');
-        await page.waitFor(1000);
+        for (let i = 0; i < req.body.contacts.length; i++) {
 
-        await page.click('._210SC span[title="' + name + '"]');
-        await page.waitFor(2000);
+            let name = req.body.contacts[i].name;
 
-        await page.type('._2FVVk._2UL8j', ' '+message);
-        await page.waitFor(3000);
+            try {
+                await page.click('._3FRCZ'); // clica no campo de pesquisa
+                await page.waitFor(1000);
+                await page.type('._3FRCZ', name); // digita o nome de contato
+                await page.waitFor(100);
 
-        await page.click('span[data-testid="send"]')
-        await page.waitFor(1000);
+                await page.click('._210SC span[title="' + name + '"]'); // abre a conversar
+                await page.waitFor(500);
 
+                await page.type('._2FVVk._2UL8j', ' ' + message); // escreve a mensagem
+                await page.waitFor(3000);
+
+                page.click('._3e4VU'); // limpa o campo pesquisa
+
+                await page.click('span[data-testid="send"]') // envia a mensagem
+                await page.waitFor(100);
+            } catch (err) {
+
+            }
+
+        }
     }
-
-    // await page.click('span[title="Eu"]');
-    // await page.waitFor(2000);
-
-    // await page.type('._2FVVk._2UL8j', ' teste Bot');
-    // await page.waitFor(2000);
-
-    // await page.click('span[data-testid="send"]')
-
-    // await browser.close();
 
     return res.json({ send: true })
 
